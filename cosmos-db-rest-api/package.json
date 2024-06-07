@@ -1,0 +1,15 @@
+{
+  "name": "cosmos-db-rest-api",
+  "version": "1.0.0",
+  "description": "",
+  "main": "cosmos-db-query-api.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "crypto": "^1.0.1",
+    "moment": "^2.30.1"
+  }
+}
