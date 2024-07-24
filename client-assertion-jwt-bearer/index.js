@@ -11,8 +11,8 @@ let sha1Fingerprint = cert.fingerprint.replace(/:/g, '');
 let x5t = Buffer.from(sha1Fingerprint, 'hex').toString('base64url');
 
 //Prepare jwt assertion claim
-const loginServer = "https://login.microsoftonline.com/780f17e7-9819-4788-a202-2ad993143e88/oauth2/v2.0/token";
-const client_id = "6bd16317-b294-4116-acda-92c76993ca23";
+const loginServer = "https://login.microsoftonline.com/xxxx-xxx-xxx-xxx-xxx/oauth2/v2.0/token";
+const client_id = "xxx-xxx-xxx-xxx-xxxx";
 const issuedAt = Date.now() / 1000;
 const notValidBefore = issuedAt + 1;
 const expiresIn = issuedAt + 1 * 60 * 60;
