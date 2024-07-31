@@ -1,8 +1,18 @@
 const jwkToPem = require('jwk-to-pem');
-const fs = require('fs');
+const fs = require('fs').promises;
 
-var jwk = fs.readFileSync('cert.jwks', 'utf-8');
+async function convertJWKSToPEM(jwksFilePath) {
+  try {
+    const jwkString = await fs.readFile(jwksFilePath, 'utf-8');
+    const jwkObject = JSON.parse(jwkString);
+    const pem = jwkToPem(jwkObject);
+    return pem;
+  } catch (error) {
+    console.error('Error converting JWKS to PEM:', error);
+    throw error; 
+  }
+}
 
-pem = jwkToPem(JSON.parse(jwk));
-
-console.log(pem);
+convertJWKSToPEM('cert.jwks')
+  .then(pem => console.log(pem))
+  .catch(error => console.error('Error:', error));
