@@ -41,14 +41,14 @@ console.log("JWT Assertion Token: \n" + client_assertion)
 
 
 //Call O-auth API to get access token using jwt-bearer
- 
+
 const httpHeaders = new Headers();
 httpHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
 const urlEncodedBody = new URLSearchParams();
 urlEncodedBody.append("client_id", client_id);
 urlEncodedBody.append("client_assertion", client_assertion);
-urlEncodedBody.append("scope", "https://graph.microsoft.com/.default");
+urlEncodedBody.append("scope", client_id + "/.default");
 urlEncodedBody.append("grant_type", "client_credentials");
 urlEncodedBody.append("client_assertion_type", "urn:ietf:params:oauth:client-assertion-type:jwt-bearer");
 
