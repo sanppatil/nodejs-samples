@@ -41,7 +41,6 @@ console.log("JWT Assertion Token: \n" + client_assertion)
 
 
 //Call O-auth API to get access token using jwt-bearer
-
 const httpHeaders = new Headers();
 httpHeaders.append("Content-Type", "application/x-www-form-urlencoded");
 
