@@ -16,7 +16,8 @@ const makeAPICall = async (hostname) => {
         'method': 'GET',
         'url': 'https://' + hostname + uri,
         'headers': {
-            'apikey': 'xxxx'
+            'apikey': 'xxxx',
+            'Cache-Control' : 'no-store'
         }
     };
     return new Promise((resolve, reject) => {
@@ -46,8 +47,7 @@ const createBulkLoad = async (hostname, numberOfAPICalls) => {
         console.log(`Average response time with (${hostname}): ${findAverage(perfData)}ms`);
 
     } catch (error) {
-        console.error('ERROR:');
-        console.error(error);
+        console.error('ERROR:' + error);
     }
 }
 
