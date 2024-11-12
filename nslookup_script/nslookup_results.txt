@@ -1,0 +1,41 @@
+nslookup result for google.com:
+Server:		10.20.202.50
+Address:	10.20.202.50#53
+
+Non-authoritative answer:
+Name:	google.com
+Address: 142.251.40.110
+
+
+
+nslookup result for yahoo.com:
+Server:		10.20.202.50
+Address:	10.20.202.50#53
+
+Non-authoritative answer:
+Name:	yahoo.com
+Address: 74.6.143.26
+Name:	yahoo.com
+Address: 98.137.11.164
+Name:	yahoo.com
+Address: 74.6.143.25
+Name:	yahoo.com
+Address: 74.6.231.20
+Name:	yahoo.com
+Address: 98.137.11.163
+Name:	yahoo.com
+Address: 74.6.231.21
+
+
+
+nslookup result for 8.8.8.8:
+Server:		10.20.202.50
+Address:	10.20.202.50#53
+
+Non-authoritative answer:
+8.8.8.8.in-addr.arpa	name = dns.google.
+
+Authoritative answers can be found from:
+
+
+
