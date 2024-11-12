@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Real-Time Temperature Streaming</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #4e54c8, #8f94fb);
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+            background: #fff;
+            border-radius: 10px;
+            padding: 20px 40px;
+            box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            color: #4e54c8;
+        }
+
+        label, #cityName, #temperature {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #555;
+        }
+
+        input[type="text"] {
+            padding: 10px;
+            width: 80%;
+            margin-top: 10px;
+            border: 2px solid #4e54c8;
+            border-radius: 5px;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: #8f94fb;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1em;
+            color: #fff;
+            background-color: #4e54c8;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover {
+            background-color: #8f94fb;
+        }
+
+        #cityName, #temperature {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time Temperature Data</h1>
+        <label for="city">Enter City</label>
+        <input id="city" type="text" placeholder="e.g., New York">
+        <button onclick="startPolling()">Start Streaming</button>
+        <h2 id="cityName">City: -</h2>
+        <h2 id="temperature">Temperature: - °C</h2>
+    </div>
+
+    <script>
+        let intervalId;
+
+        function startPolling() {
+            const city = document.getElementById("city").value;
+            document.getElementById("cityName").textContent = `City: ${city}`;
+
+            // Clear previous interval if any
+            if (intervalId) {
+                clearInterval(intervalId);
+            }
+
+            // Set up polling every 1 seconds
+            intervalId = setInterval(() => {
+                fetchTemperature(city);
+            }, 1000);
+        }
+
+        function fetchTemperature(city) {
+            const xhr = new XMLHttpRequest();
+            xhr.open("GET", `http://localhost:8001/temperature/${city}`, true);
+            xhr.onreadystatechange = function () {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    const data = JSON.parse(xhr.responseText);
+                    document.getElementById("temperature").textContent = `Temperature: ${data.temperature}°C`;
+                }
+            };
+            xhr.send();
+        }
+    </script>
+</body>
+</html>

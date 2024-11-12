@@ -88,7 +88,7 @@
             if (ws) {
                 ws.close();  // Close existing connection if any
             }
-            ws = new WebSocket(`ws://localhost:8001/ws/${city}`);
+            ws = new WebSocket(`ws://localhost:8001/${city}`);
             ws.onmessage = function(event) {
                 const data = JSON.parse(event.data);
                 document.getElementById("cityName").textContent = `City: ${data.city}`;

@@ -18,8 +18,8 @@ wss.on("connection", (ws, req) => {
     ws.send(JSON.stringify(data));
   };
 
-  // Send temperature data every 2 seconds
-  const intervalId = setInterval(sendTemperature, 500);
+  // Send temperature data every 1 seconds
+  const intervalId = setInterval(sendTemperature, 1000);
 
   ws.on("close", () => {
     console.log(`WebSocket connection closed for city: ${city}`);
