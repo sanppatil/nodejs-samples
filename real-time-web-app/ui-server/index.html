@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>City Temperature Streaming</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+        }
+
+        .container {
+            text-align: center;
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+            width: 300px;
+        }
+
+        h1 {
+            color: #4e54c8;
+            margin-bottom: 20px;
+        }
+
+        select {
+            padding: 10px;
+            width: 100%;
+            border: 2px solid #4e54c8;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 1em;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.1em;
+            color: #ffffff;
+            background-color: #4e54c8;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #8f94fb;
+        }
+
+        .display {
+            margin-top: 20px;
+            font-size: 1.2em;
+            color: #333;
+        }
+
+        .display h2 {
+            color: #4e54c8;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Select a City</h1>
+        
+        <!-- Dropdown for cities -->
+        <select id="citySelect">
+            <option value="" disabled selected>Select a city</option>
+            <option value="New York">New York</option>
+            <option value="Los Angeles">Los Angeles</option>
+            <option value="Chicago">Chicago</option>
+            <option value="Houston">Houston</option>
+            <option value="Phoenix">Phoenix</option>
+        </select>
+
+        <!-- Start Streaming Button -->
+        <button onclick="startStreaming()">Start Streaming</button>
+
+        <!-- Display Area for Temperature -->
+        <div class="display" id="displayArea">
+            <h2 id="cityName">City: -</h2>
+            <h2 id="temperature">Temperature: - °C</h2>
+        </div>
+    </div>
+
+    <script>
+        let eventSource;
+
+        function startStreaming() {
+            const citySelect = document.getElementById("citySelect");
+            const city = citySelect.value;
+            const cityNameDisplay = document.getElementById("cityName");
+            const temperatureDisplay = document.getElementById("temperature");
+
+            if (!city) {
+                alert("Please select a city to start streaming.");
+                return;
+            }
+
+            // Display selected city
+            cityNameDisplay.textContent = `City: ${city}`;
+
+            // Close previous EventSource connection if it exists
+            if (eventSource) {
+                eventSource.close();
+            }
+
+            // Establish connection to the server stream for the selected city
+            eventSource = new EventSource(`http://localhost:8002/stream/${city}`);
+
+            // Update temperature on receiving data
+            eventSource.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                temperatureDisplay.textContent = `Temperature: ${data.temperature}°C`;
+            };
+
+            eventSource.onerror = function() {
+                console.log("EventSource connection closed");
+                eventSource.close();
+            };
+        }
+    </script>
+</body>
+</html>

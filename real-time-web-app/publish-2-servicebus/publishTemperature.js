@@ -8,14 +8,14 @@
  */
 
 const { ServiceBusClient } = require("@azure/service-bus");
-const dotenv = require("dotenv");
-
-// Load environment variables from .env file
-dotenv.config();
+require("dotenv").config(); // Load environment variables from .env file
 
 // Azure Service Bus configuration
 const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING; // Service Bus connection string
 const topicName = process.env.TOPIC_NAME; // Topic name
+
+// List of cities to publish temperature data for
+const cities = ["New York", "Los Angeles", "Chicago", "Houston", "Phoenix"];
 
 // Function to generate random temperature data for a given city
 function generateRandomTemperature(city) {
@@ -23,11 +23,8 @@ function generateRandomTemperature(city) {
   return { city, temperature };
 }
 
-// Function to send temperature data to Azure Service Bus
-async function sendTemperatureToServiceBus(city) {
-  const serviceBusClient = new ServiceBusClient(connectionString);
-  const sender = serviceBusClient.createSender(topicName);
-
+// Function to send temperature data for a city to Azure Service Bus
+async function sendTemperatureForCity(sender, city) {
   try {
     while (true) {
       // Generate random temperature data
@@ -39,22 +36,35 @@ async function sendTemperatureToServiceBus(city) {
       };
 
       // Send message to the topic
-      console.log(`Sending message: ${JSON.stringify(temperatureData)}`);
+      console.log(`Sending message for ${city}: ${JSON.stringify(temperatureData)}`);
       await sender.sendMessages(message);
 
-      // Wait 1 seconds before sending the next message
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      // Wait 1 seconds before sending the next message for this city
+      await new Promise((resolve) => setTimeout(resolve, 1000));
     }
   } catch (err) {
-    console.error("Error sending message:", err);
+    console.error(`Error sending message for ${city}:`, err);
+  }
+}
+
+// Main function to start sending temperature data for multiple cities
+async function main() {
+  const serviceBusClient = new ServiceBusClient(connectionString);
+
+  try {
+    const sender = serviceBusClient.createSender(topicName);
+
+    // For each city, start a separate loop to send temperature data
+    const cityTasks = cities.map((city) => sendTemperatureForCity(sender, city));
+
+    // Wait for all city tasks to complete (they'll run indefinitely in this case)
+    await Promise.all(cityTasks);
   } finally {
-    await sender.close();
     await serviceBusClient.close();
   }
 }
 
 // Start the application
-const cityName = "New York"; // Replace with any city name you want to simulate
-sendTemperatureToServiceBus(cityName).catch((err) => {
+main().catch((err) => {
   console.error("Error running application:", err);
 });
