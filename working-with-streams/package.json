@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@azure/event-hubs": "^5.11.2",
+    "@azure/identity": "^3.3.0"
+  }
+}
