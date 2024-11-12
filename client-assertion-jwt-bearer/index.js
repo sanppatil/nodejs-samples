@@ -1,18 +1,20 @@
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const crypto = require("crypto");
+require("dotenv").config();
 
-const privateKey = fs.readFileSync('cert/private.key');
+const privateKey = fs.readFileSync('private.key');
+
 
 //Prepare x5t header
-let certPem = fs.readFileSync('cert/certificate.pem');
+let certPem = fs.readFileSync('certificate.pem');
 let cert = new crypto.X509Certificate(certPem);
 let sha1Fingerprint = cert.fingerprint.replace(/:/g, '');
 let x5t = Buffer.from(sha1Fingerprint, 'hex').toString('base64url');
 
 //Prepare jwt assertion claim
-const loginServer = "https://login.microsoftonline.com/xxxx-xxx-xxx-xxx-xxx/oauth2/v2.0/token";
-const client_id = "xxx-xxx-xxx-xxx-xxxx";
+const loginServer = process.env.LOGIN_SERVER;
+const client_id = process.env.CLINET_ID;
 const issuedAt = Date.now() / 1000;
 const notValidBefore = issuedAt + 1;
 const expiresIn = issuedAt + 1 * 60 * 60;
