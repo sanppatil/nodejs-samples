@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Real-Time City Temperatures</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f0f2f5;
+            margin: 0;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0px 10px 25px rgba(0, 0, 0, 0.2);
+            width: 80%;
+            max-width: 800px;
+            overflow-y: auto;
+        }
+
+        h1 {
+            text-align: center;
+            color: #4e54c8;
+            margin-bottom: 20px;
+        }
+
+        .status {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 1.1em;
+        }
+
+        .status.connected {
+            color: green;
+        }
+
+        .status.disconnected {
+            color: red;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            text-align: left;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #4e54c8;
+            color: white;
+        }
+
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .temp {
+            font-weight: bold;
+            color: #4e54c8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Real-Time City Temperatures</h1>
+        <div id="status" class="status connected">Status: Connected</div>
+        <table id="cityTable">
+            <thead>
+                <tr>
+                    <th>City</th>
+                    <th>Temperature (°C)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Rows will be added dynamically here -->
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        let eventSource;
+        const lastKnownState = {}; // Cache for the last known temperature of each city
+        const reconnectInterval = 5000; // Reconnection attempt interval in milliseconds
+        let isReconnecting = false;
+
+        function initializeStreaming() {
+            updateStatus("Connected", "connected");
+
+            // Establish connection to the server stream
+            eventSource = new EventSource("http://localhost:8002/stream");
+
+            // Handle incoming data
+            eventSource.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+
+                // Cache the last known temperature
+                lastKnownState[data.city] = data.temperature;
+
+                // Update the UI with the latest temperature
+                updateCityTemperature(data.city, data.temperature);
+            };
+
+            // Handle connection errors
+            eventSource.onerror = function () {
+                console.error("EventSource connection lost.");
+                updateStatus("Disconnected. Reconnecting...", "disconnected");
+                attemptReconnection();
+            };
+        }
+
+        function updateCityTemperature(city, temperature) {
+            const tableBody = document.getElementById("cityTable").getElementsByTagName("tbody")[0];
+            let existingRow = document.getElementById(`row-${city}`);
+
+            if (existingRow) {
+                // Update existing row
+                const tempCell = existingRow.getElementsByClassName("temp")[0];
+                tempCell.textContent = `${temperature}°C`;
+            } else {
+                // Create a new row
+                const newRow = document.createElement("tr");
+                newRow.id = `row-${city}`;
+
+                const cityCell = document.createElement("td");
+                cityCell.textContent = city;
+
+                const tempCell = document.createElement("td");
+                tempCell.className = "temp";
+                tempCell.textContent = `${temperature}°C`;
+
+                newRow.appendChild(cityCell);
+                newRow.appendChild(tempCell);
+                tableBody.appendChild(newRow);
+            }
+        }
+
+        function updateStatus(message, statusClass) {
+            const statusDiv = document.getElementById("status");
+            statusDiv.textContent = `Status: ${message}`;
+            statusDiv.className = `status ${statusClass}`;
+        }
+
+        function attemptReconnection() {
+            if (isReconnecting) return;
+            isReconnecting = true;
+
+            setTimeout(() => {
+                console.log("Attempting to reconnect...");
+                initializeStreaming();
+                isReconnecting = false;
+            }, reconnectInterval);
+        }
+
+        // Initialize the streaming connection when the page loads
+        window.onload = initializeStreaming;
+    </script>
+</body>
+</html>
