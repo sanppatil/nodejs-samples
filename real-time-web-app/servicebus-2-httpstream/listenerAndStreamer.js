@@ -7,104 +7,119 @@
  * 
  */
 
-const { ServiceBusClient } = require("@azure/service-bus");
 const express = require("express");
+const { ServiceBusClient } = require("@azure/service-bus");
 const cors = require("cors");
-
 require("dotenv").config();
 
-// Azure Service Bus configuration
+// Configuration
 const connectionString = process.env.SERVICE_BUS_CONNECTION_STRING;
 const topicName = process.env.TOPIC_NAME;
 const subscriptionName = process.env.SUBSCRIPTION_NAME;
-
-// Set up Express app
-const app = express();
 const PORT = 8002;
+
+const app = express();
 
 // Enable CORS for requests from http://localhost:8000
 app.use(cors({
-  origin: "http://localhost:8000"
-}));
+    origin: "http://localhost:8000"
+  }));
 
 // Store connected clients for streaming
-let clientsByCity = {}; // Store clients grouped by city
-let latestCityData = {}; // Store the latest temperature data for each city
+let globalClients = []; // For clients connected to /stream
+let cityClients = {}; // For clients connected to /stream/:city
 
-// Add client to the list when they connect
-function addClient(req, res, city) {
-  // Set headers for HTTP streaming
-  res.setHeader("Content-Type", "text/event-stream");
-  res.setHeader("Cache-Control", "no-cache");
-  res.setHeader("Connection", "keep-alive");
-
-  // Initialize city client list if not exists
-  if (!clientsByCity[city]) {
-    clientsByCity[city] = [];
-  }
-
-  // Add client response to the city's client list
-  clientsByCity[city].push(res);
-
-  // Send the latest data for the city immediately if available
-  if (latestCityData[city]) {
-    res.write(`data: ${JSON.stringify(latestCityData[city])}\n\n`);
-  }
-
-  // Remove client when they disconnect
-  req.on("close", () => {
-    clientsByCity[city] = clientsByCity[city].filter((client) => client !== res);
-    res.end();
-  });
+// Broadcast message to global clients
+function broadcastToGlobalClients(message) {
+    globalClients.forEach((client) => client.write(`data: ${JSON.stringify(message)}\n\n`));
 }
 
-// Broadcast the latest data for a specific city to all connected clients interested in that city
-function broadcastCityData(city) {
-  if (clientsByCity[city]) {
-    clientsByCity[city].forEach((client) => client.write(`data: ${JSON.stringify(latestCityData[city])}\n\n`));
-  }
+// Broadcast message to specific city clients
+function broadcastToCityClients(city, message) {
+    if (cityClients[city]) {
+        cityClients[city].forEach((client) => client.write(`data: ${JSON.stringify(message)}\n\n`));
+    }
 }
 
-// HTTP endpoint to start streaming data for a selected city
-app.get("/stream/:city", (req, res) => {
-  const city = req.params.city;
-  addClient(req, res, city);
+// Add a client to the global stream
+function addGlobalClient(req, res) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    globalClients.push(res);
+
+    req.on("close", () => {
+        globalClients = globalClients.filter((client) => client !== res);
+        res.end();
+    });
+}
+
+// Add a client to a specific city stream
+function addCityClient(req, res, city) {
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
+
+    if (!cityClients[city]) {
+        cityClients[city] = [];
+    }
+
+    cityClients[city].push(res);
+
+    req.on("close", () => {
+        cityClients[city] = cityClients[city].filter((client) => client !== res);
+        res.end();
+    });
+}
+
+// Route for streaming all cities
+app.get("/stream", (req, res) => {
+    addGlobalClient(req, res);
 });
 
-// Start HTTP server
+// Route for streaming a specific city
+app.get("/stream/:city", (req, res) => {
+    const city = req.params.city;
+    addCityClient(req, res, city);
+});
+
+// Start the HTTP server
 app.listen(PORT, () => {
-  console.log(`HTTP stream server running on http://localhost:${PORT}/stream/:city`);
+    console.log(`HTTP stream server running on http://localhost:${PORT}/stream`);
+    console.log(`HTTP stream server for specific cities on http://localhost:${PORT}/stream/:city`);
 });
 
 // Function to listen to Service Bus topic and broadcast messages
 async function listenToServiceBus() {
-  const serviceBusClient = new ServiceBusClient(connectionString);
-  const receiver = serviceBusClient.createReceiver(topicName, subscriptionName);
+    const serviceBusClient = new ServiceBusClient(connectionString);
+    const receiver = serviceBusClient.createReceiver(topicName, subscriptionName);
 
-  console.log("Listening for messages from Azure Service Bus...");
+    console.log("Listening for messages from Azure Service Bus...");
 
-  // Handler to process each message
-  receiver.subscribe({
-    processMessage: async (message) => {
-      const data = message.body;
-      // console.log("Received message:", data);
+    receiver.subscribe({
+        processMessage: async (message) => {
+            const data = message.body;
+            console.log("Received message:", data);
 
-      // Update the latest data for the city
-      latestCityData[data.city] = data;
+            // Broadcast to global clients
+            broadcastToGlobalClients(data);
 
-      // Broadcast the latest data to all clients interested in this city
-      broadcastCityData(data.city);
-    },
-    processError: async (err) => {
-      console.error("Error receiving message:", err);
-    },
-  });
+            // Broadcast to city-specific clients
+            if (data.city) {
+                broadcastToCityClients(data.city, data);
+            }
+        },
+        processError: async (err) => {
+            console.error("Error receiving message:", err);
+        },
+    });
 
-  // Keep the listener alive
-  await new Promise(() => {});
+    // Keep the listener alive
+    await new Promise(() => {});
 }
 
 // Start the Service Bus listener
 listenToServiceBus().catch((err) => {
-  console.error("Error running Service Bus listener:", err);
+    console.error("Error running Service Bus listener:", err);
 });
