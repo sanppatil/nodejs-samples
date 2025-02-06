@@ -1,3 +1,11 @@
+/**
+ * @summary Execute below commands to avoid certificate errors related to "SELF_SIGNED_CERT_IN_CHAIN"
+ *
+ * $ echo quit | openssl s_client -showcerts -servername server-name.servicebus.windows.net -connect server-name.servicebus.windows.net:443 > ~/cert/server-name-servicebus-ca-certificate.pem
+ * $ export NODE_EXTRA_CA_CERTS=~/cert/server-name-servicebus-ca-certificate.pem
+ *
+ */
+
 require("dotenv").config();
 const { ServiceBusClient } = require("@azure/service-bus");
 
